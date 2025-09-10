@@ -1,7 +1,7 @@
 import json
-import sys
 
-def batch_size_bytes(batch_requests: list[dict]) -> int:
+def measure_request_byte_size(batch_requests: list[dict]) -> int:
+    '''measure the byte size of a batch request'''
     if not isinstance(batch_requests, (dict, list)):
         try:
             batch_requests = batch_requests.model_dump()
