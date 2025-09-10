@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 from typing import List
 
-def find_valid_jpgs(
+def retrieve_paths(
     directory: str | Path,
     max_id: int = 204251
 ) -> List[str]:
@@ -37,12 +37,9 @@ def find_valid_jpgs(
         except ValueError:
             continue  # ID wasn't a valid integer
         if file_id <= max_id:
-            matches.append(p.name)
+            matches.append(str(directory / p.name))
 
     return matches
-
-directory = "/Volumes/Seagate Portable Drive/"
-print(len(find_valid_jpgs(directory)))
 
 
 
