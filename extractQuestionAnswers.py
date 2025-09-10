@@ -5,17 +5,18 @@ from prompts import claude_ocr_system_prompt
 from anthropic.types.messages.message_batch import MessageBatch
 import os
 import time
-from dotenv import load_dotenv
 import base64
-from measureRequestByteSize import batch_size_bytes
 
 class ImageEncodingError(Exception):
+    '''Exception raised for errors in the image encoding process.'''
     pass
 
 class APIRequestError(Exception):
+    '''Exception raised for errors during API requests.'''
     pass
 
 class TimeoutError(Exception):
+    '''Exception raised when a process exceeds the allocated time.'''
     pass
 
 def encode_image_to_base64(path: str) -> str:
@@ -25,15 +26,15 @@ def encode_image_to_base64(path: str) -> str:
     path: local path to the image
     return: Base 64 encoding of an image
     '''
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Image file not found at path: {path}")
+    
+    if not path.lower().endswith(('.png', '.jpg', '.jpeg')):
+        raise ImageEncodingError("Unsupported file format. Please use PNG or JPG images.")
+    
     try:
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f"Image file not found at path: {path}")
-        if not path.lower().endswith(('.png', '.jpg', '.jpeg')):
-            raise ImageEncodingError("Unsupported file format. Please use PNG or JPG images.")
         with open(path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
-    except FileNotFoundError as e:
-        raise 
     except Exception as e:
         raise ImageEncodingError(f"Error encoding image to base64: {e}")
 
@@ -77,7 +78,8 @@ def create_request(paths: list[str]) -> list[Request]:
         try:
             image_b64 = encode_image_to_base64(path)
         except Exception as e:
-            print(f"Failed to encode image located at {path}.")
+            #Log the path that caused the error and continue with the next path
+            print(f"ImageEncodingError for {path}: {e}")
             continue
         request = Request(
             custom_id=str(custom_id),
@@ -101,10 +103,10 @@ def extract_problem_from_screenshot_on_batch(requests: list[Request], client: An
         )
         print(type(batch_response))
         return batch_response
-    except RateLimitError as e:
-        raise RateLimitError(e)
-    except Exception as e:
-        raise APIRequestError(e)
+    except RateLimitError:
+        raise
+    except Exception:
+        raise
 
 def extract_problem_from_screenshot_one_by_one(image_b64: str, client: Anthropic) -> str:
     '''
@@ -180,23 +182,6 @@ def wait_for_retrieval(batch_id: str, client: Anthropic, timeout_seconds: int = 
         if time.time() - start > timeout_seconds:
             raise TimeoutError(f"It is taking too long for batch to be completed")
         time.sleep(request_interval_seconds)
-
-if __name__ == '__main__':
-    load_dotenv()
-    client = Anthropic(api_key=os.getenv("API_KEY"))
-    paths = []
-    for i in range(100):
-        paths.append("/Volumes/Seagate Portable Drive/Screenshot_20250717_140344_Samsung Internet.jpg")
-        size_1 = batch_size_bytes(create_request(paths))
-        print(f"Batch of {i} size: {size_1 / (1024*1024):.2f} MB")
-
-    '''
-    batch_response = extract_problem_from_screenshot_on_batch(batch_requests, client)
-    try:
-        print(wait_for_retrieval(batch_response.id, client))
-    except TimeoutError as e:
-        print(f"TimeoutError: {e}")
-    '''
 
 
 
