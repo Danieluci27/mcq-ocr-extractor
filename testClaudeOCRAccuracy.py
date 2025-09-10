@@ -19,6 +19,7 @@ TEST_SET = [
 ]
 
 def test_ClaudeOCR_correct_answer_detection_accuracy(directory: str) -> None:
+    '''Test the accuracy of Claude OCR in extracting correct answers from screenshots.'''
     load_dotenv()
     client = Anthropic(api_key=os.getenv("API_KEY"))
     correct_answer_count = 0
@@ -52,7 +53,7 @@ def test_ClaudeOCR_correct_answer_detection_accuracy(directory: str) -> None:
     MAX_RETRIES = 3
     for pair in TEST_SET:
         success = False
-        for attempt in range(MAX_RETRIES):
+        for _ in range(MAX_RETRIES):
             try:
                 test_individual_pair(pair)
                 success = True
@@ -71,7 +72,7 @@ def test_ClaudeOCR_correct_answer_detection_accuracy(directory: str) -> None:
     accuracy = correct_answer_count / total_count
     print(f"Accuracy: {accuracy:.3f} ({correct_answer_count} / {total_count})")
 
-test_ClaudeOCR_correct_answer_detection_accuracy()
+test_ClaudeOCR_correct_answer_detection_accuracy("/Volumes/Seagate Portable Drive/")
 
 #Claude-Sonnet-4-20250514 achieved 100% accuracy.
 #TO-DO: Need to add more test cases.
